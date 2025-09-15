@@ -4,6 +4,8 @@ import numpy as np
 import time
 import json
 import random
+import plotly.graph_objects as go
+import plotly.express as px
 from datetime import datetime, timedelta
 from typing import Dict, List
 
@@ -56,16 +58,39 @@ st.markdown("""
         transition: all 0.3s ease;
         cursor: pointer;
         border-left: 5px solid #ff6b35;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .asset-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+        transition: left 0.5s;
+    }
+    
+    .asset-card:hover::before {
+        left: 100%;
     }
     
     .asset-card:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        transform: translateY(-5px) scale(1.02);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.2);
     }
     
     .high-risk {
         border-left-color: #dc3545 !important;
         background: linear-gradient(135deg, #fff5f5, #ffe6e6);
+        animation: pulse-red 3s infinite;
+    }
+    
+    @keyframes pulse-red {
+        0%, 100% { box-shadow: 0 5px 15px rgba(220,53,69,0.3); }
+        50% { box-shadow: 0 8px 25px rgba(220,53,69,0.5); }
     }
     
     .medium-risk {
@@ -95,37 +120,74 @@ st.markdown("""
         box-shadow: 0 8px 25px rgba(0,0,0,0.15);
         transition: all 0.3s ease;
         margin: 0.5rem 0;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.6s;
+    }
+    
+    .metric-card:hover::before {
+        left: 100%;
     }
     
     .metric-card:hover {
-        transform: translateY(-3px);
+        transform: translateY(-3px) scale(1.05);
         box-shadow: 0 12px 35px rgba(0,0,0,0.2);
     }
     
     .risk-indicator {
         display: inline-block;
-        width: 12px;
-        height: 12px;
+        width: 15px;
+        height: 15px;
         border-radius: 50%;
-        margin-right: 8px;
+        margin-right: 10px;
+        position: relative;
     }
     
-    .risk-high { background-color: #dc3545; animation: blink-red 2s infinite; }
-    .risk-medium { background-color: #ffc107; }
-    .risk-low { background-color: #28a745; }
+    .risk-high { 
+        background-color: #dc3545; 
+        animation: blink-red 2s infinite;
+        box-shadow: 0 0 10px rgba(220,53,69,0.5);
+    }
+    .risk-medium { 
+        background-color: #ffc107;
+        box-shadow: 0 0 8px rgba(255,193,7,0.5);
+    }
+    .risk-low { 
+        background-color: #28a745;
+        box-shadow: 0 0 8px rgba(40,167,69,0.5);
+    }
     
     @keyframes blink-red {
-        0%, 50% { opacity: 1; }
-        51%, 100% { opacity: 0.5; }
+        0%, 50% { opacity: 1; transform: scale(1); }
+        51%, 100% { opacity: 0.6; transform: scale(1.2); }
     }
     
     .model-performance {
         background: linear-gradient(135deg, #28a745, #20c997);
         color: white;
-        padding: 1rem;
-        border-radius: 10px;
+        padding: 1.5rem;
+        border-radius: 15px;
         margin: 0.5rem 0;
         text-align: center;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .model-performance:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 35px rgba(0,0,0,0.2);
     }
     
     .pipeline-step {
@@ -158,7 +220,7 @@ st.markdown("""
     }
     
     .pipeline-step:hover {
-        transform: translateY(-5px);
+        transform: translateY(-5px) scale(1.02);
         box-shadow: 0 12px 35px rgba(0,0,0,0.2);
     }
     
@@ -167,12 +229,13 @@ st.markdown("""
         font-size: 2.5rem;
         color: #ff6b35;
         margin: 1rem 0;
-        animation: pulse 2s infinite;
+        animation: bounce 2s infinite;
     }
     
-    @keyframes pulse {
-        0%, 100% { opacity: 0.6; transform: scale(1); }
-        50% { opacity: 1; transform: scale(1.1); }
+    @keyframes bounce {
+        0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+        40% { transform: translateY(-10px); }
+        60% { transform: translateY(-5px); }
     }
     
     .alert-banner {
@@ -185,6 +248,7 @@ st.markdown("""
         font-weight: bold;
         box-shadow: 0 4px 15px rgba(220,53,69,0.3);
         animation: pulse-alert 3s infinite;
+        cursor: pointer;
     }
     
     @keyframes pulse-alert {
@@ -201,41 +265,73 @@ st.markdown("""
         margin: 0.5rem;
         font-weight: bold;
         box-shadow: 0 4px 15px rgba(40,167,69,0.3);
+        animation: pulse-green 3s infinite;
+        cursor: pointer;
+    }
+    
+    @keyframes pulse-green {
+        0%, 100% { box-shadow: 0 4px 15px rgba(40,167,69,0.3); }
+        50% { box-shadow: 0 6px 25px rgba(40,167,69,0.5); }
     }
     
     .tech-stack-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
         margin: 2rem 0;
     }
     
     .tech-card {
         background: white;
-        padding: 1.5rem;
+        padding: 2rem;
         border-radius: 15px;
         box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         text-align: center;
         transition: all 0.3s ease;
         border-top: 4px solid #ff6b35;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .tech-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,107,53,0.1), transparent);
+        transition: left 0.6s;
+    }
+    
+    .tech-card:hover::before {
+        left: 100%;
     }
     
     .tech-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        transform: translateY(-8px);
+        box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        border-top-color: #f7931e;
     }
     
     .live-status {
         background: linear-gradient(135deg, #ff6b35, #f7931e);
         color: white;
-        padding: 0.5rem 1rem;
+        padding: 0.8rem 1.2rem;
         border-radius: 15px;
-        margin: 0.2rem 0;
+        margin: 0.3rem 0;
         animation: pulse-glow 3s infinite;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .live-status:hover {
+        transform: scale(1.05);
     }
     
     @keyframes pulse-glow {
-        0%, 100% { box-shadow: 0 0 5px rgba(255,107,53,0.5); }
+        0%, 100% { box-shadow: 0 0 8px rgba(255,107,53,0.5); }
         50% { box-shadow: 0 0 20px rgba(255,107,53,0.8); }
     }
     
@@ -245,61 +341,117 @@ st.markdown("""
         padding: 1rem;
         border-radius: 10px;
         margin: 0.5rem 0;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .crew-schedule:hover {
+        transform: translateX(5px);
+        box-shadow: 0 5px 15px rgba(111,66,193,0.3);
+    }
+    
+    .interactive-filter {
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        padding: 1rem;
+        border-radius: 10px;
+        margin: 1rem 0;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .interactive-filter:hover {
+        transform: scale(1.02);
+        box-shadow: 0 8px 25px rgba(102,126,234,0.4);
+    }
+    
+    .prediction-output {
+        background: #1a1a1a;
+        color: #00ff41;
+        padding: 1.5rem;
+        border-radius: 10px;
+        font-family: 'Courier New', monospace;
+        border: 2px solid #00ff41;
+        animation: terminal-glow 2s infinite;
+    }
+    
+    @keyframes terminal-glow {
+        0%, 100% { box-shadow: 0 0 10px rgba(0,255,65,0.3); }
+        50% { box-shadow: 0 0 20px rgba(0,255,65,0.6); }
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Generate realistic asset data
-def generate_asset_data():
+# Generate realistic asset data with more details
+def generate_detailed_asset_data():
     asset_types = ["Transformer", "Circuit Breaker", "Power Line", "Substation", "Generator", "Switch Gear"]
-    locations = ["North Grid", "South Grid", "East Grid", "West Grid", "Central Hub"]
+    locations = ["North Grid Sector A", "South Grid Sector B", "East Distribution Hub", "West Transmission", "Central Control"]
+    manufacturers = ["ABB", "Siemens", "GE", "Schneider", "Mitsubishi"]
     
     assets = []
-    for i in range(50):  # Show subset of 9000+ assets
-        failure_prob = random.uniform(0.01, 0.95)
-        if failure_prob > 0.85:
+    for i in range(20):  # More detailed subset
+        failure_prob = random.uniform(0.05, 0.95)
+        if failure_prob > 0.80:
             risk_level = "High"
             risk_color = "high-risk"
-        elif failure_prob > 0.5:
+            risk_class = "risk-high"
+        elif failure_prob > 0.40:
             risk_level = "Medium" 
             risk_color = "medium-risk"
+            risk_class = "risk-medium"
         else:
             risk_level = "Low"
             risk_color = "low-risk"
+            risk_class = "risk-low"
             
+        install_date = datetime.now() - timedelta(days=random.randint(365*2, 365*25))
+        last_maint = datetime.now() - timedelta(days=random.randint(30, 730))
+        
         assets.append({
             "Asset ID": f"AST-{random.randint(1000, 9999)}",
             "Type": random.choice(asset_types),
             "Location": random.choice(locations),
+            "Manufacturer": random.choice(manufacturers),
+            "Install Date": install_date.strftime("%Y-%m-%d"),
             "Failure Probability": failure_prob,
             "Risk Level": risk_level,
             "Risk Color": risk_color,
-            "Last Maintenance": (datetime.now() - timedelta(days=random.randint(30, 365))).strftime("%Y-%m-%d"),
-            "Expected Cost": random.randint(5000, 150000),
-            "Crew Priority": random.randint(1, 10)
+            "Risk Class": risk_class,
+            "Last Maintenance": last_maint.strftime("%Y-%m-%d"),
+            "Expected Cost": random.randint(15000, 250000),
+            "Crew Priority": random.randint(1, 10),
+            "Voltage Level": random.choice(["4kV", "12kV", "23kV", "115kV", "138kV"]),
+            "Customer Impact": random.randint(50, 5000),
+            "Confidence Score": random.uniform(0.75, 0.99)
         })
     
     return sorted(assets, key=lambda x: x["Failure Probability"], reverse=True)
 
-# Generate model performance data
-def generate_model_metrics():
-    return {
-        "Ensemble Model Accuracy": 0.94,
-        "Recall (Failure Detection)": 1.00,  # 100% recall as mentioned
-        "Precision": 0.87,
-        "F1 Score": 0.93,
-        "Assets Monitored": 9247,
-        "High Risk Identified": 146,
-        "False Positive Rate": 0.13,
-        "Model Confidence": 0.91
-    }
+# Generate time series data for charts
+def generate_prediction_trends():
+    dates = [datetime.now() - timedelta(days=i) for i in range(30, 0, -1)]
+    
+    high_risk_counts = []
+    accuracy_scores = []
+    
+    for i, date in enumerate(dates):
+        # Simulate some variation in metrics
+        base_high_risk = 146
+        high_risk_variation = random.randint(-15, 15)
+        high_risk_counts.append(max(100, base_high_risk + high_risk_variation))
+        
+        base_accuracy = 0.94
+        accuracy_variation = random.uniform(-0.03, 0.02)
+        accuracy_scores.append(min(0.99, max(0.85, base_accuracy + accuracy_variation)))
+    
+    return dates, high_risk_counts, accuracy_scores
 
 def main():
     # Enhanced header
     st.markdown('<h1 class="main-header">⚡ Smart Grid Predictive Maintenance on AKS</h1>', unsafe_allow_html=True)
     st.markdown('<p style="text-align: center; font-size: 1.3rem; color: #666; font-weight: 300;">AI-Powered Equipment Failure Prevention & Crew Optimization</p>', unsafe_allow_html=True)
     
-    # Enhanced hero section
+    # Enhanced hero section with animation
     st.markdown("""
     <div class="hero-section">
         <h2>🎯 Enterprise-Grade Predictive Maintenance Solution</h2>
@@ -307,25 +459,25 @@ def main():
             ML ensemble models running on Azure Kubernetes Service to prevent equipment failures and optimize maintenance scheduling.
         </p>
         <div style="display: flex; justify-content: center; gap: 2rem; margin-top: 2rem; flex-wrap: wrap;">
-            <div style="text-align: center;">
-                <div style="font-size: 2rem;">🤖</div>
-                <div>100% Recall</div>
-                <div style="font-size: 0.9rem; opacity: 0.8;">Failure Detection</div>
+            <div style="text-align: center; cursor: pointer;" onclick="this.style.transform='scale(1.1)'">
+                <div style="font-size: 2.5rem;">🤖</div>
+                <div style="font-size: 1.3rem; font-weight: bold;">100%</div>
+                <div style="font-size: 0.9rem; opacity: 0.8;">Recall Rate</div>
             </div>
-            <div style="text-align: center;">
-                <div style="font-size: 2rem;">⚙️</div>
-                <div>146 Assets</div>
-                <div style="font-size: 0.9rem; opacity: 0.8;">High Risk Identified</div>
+            <div style="text-align: center; cursor: pointer;" onclick="this.style.transform='scale(1.1)'">
+                <div style="font-size: 2.5rem;">⚙️</div>
+                <div style="font-size: 1.3rem; font-weight: bold;">146</div>
+                <div style="font-size: 0.9rem; opacity: 0.8;">High Risk Assets</div>
             </div>
-            <div style="text-align: center;">
-                <div style="font-size: 2rem;">💰</div>
-                <div>$2.3M Savings</div>
-                <div style="font-size: 0.9rem; opacity: 0.8;">Potential Annual</div>
+            <div style="text-align: center; cursor: pointer;" onclick="this.style.transform='scale(1.1)'">
+                <div style="font-size: 2.5rem;">💰</div>
+                <div style="font-size: 1.3rem; font-weight: bold;">$2.3M</div>
+                <div style="font-size: 0.9rem; opacity: 0.8;">Annual Savings</div>
             </div>
-            <div style="text-align: center;">
-                <div style="font-size: 2rem;">☁️</div>
-                <div>AKS Deployment</div>
-                <div style="font-size: 0.9rem; opacity: 0.8;">Auto-scaling ML</div>
+            <div style="text-align: center; cursor: pointer;" onclick="this.style.transform='scale(1.1)'">
+                <div style="font-size: 2.5rem;">☁️</div>
+                <div style="font-size: 1.3rem; font-weight: bold;">AKS</div>
+                <div style="font-size: 0.9rem; opacity: 0.8;">Auto-scaling</div>
             </div>
         </div>
         <p style="margin-top: 2rem; font-style: italic;">
@@ -334,35 +486,50 @@ def main():
     </div>
     """, unsafe_allow_html=True)
     
-    # Sidebar with live system status
+    # Enhanced sidebar with real-time updates
     with st.sidebar:
-        st.markdown("## 🔧 System Status")
+        st.markdown("## 🔧 Live System Status")
         
-        # Live model performance
-        st.markdown("### 🤖 ML Models")
-        model_metrics = generate_model_metrics()
+        # Auto-refresh functionality
+        if "last_refresh" not in st.session_state:
+            st.session_state.last_refresh = datetime.now()
         
-        st.markdown('<div class="live-status">📊 Ensemble Active</div>', unsafe_allow_html=True)
-        st.caption("XGBoost + TensorFlow + scikit-learn")
+        current_time = datetime.now()
+        if st.button("🔄 Refresh All Metrics", help="Update live system metrics"):
+            st.session_state.last_refresh = current_time
         
-        st.metric("Model Accuracy", f"{model_metrics['Ensemble Model Accuracy']:.0%}")
-        st.metric("Recall Rate", f"{model_metrics['Recall (Failure Detection)']:.0%}", "🎯 Perfect")
-        st.metric("Assets Monitored", f"{model_metrics['Assets Monitored']:,}")
+        st.caption(f"Last updated: {st.session_state.last_refresh.strftime('%H:%M:%S')}")
         
-        # Live infrastructure
+        # Live model performance with variations
+        st.markdown("### 🤖 ML Model Ensemble")
+        
+        base_accuracy = 0.94
+        time_variation = random.uniform(-0.02, 0.02)
+        current_accuracy = min(0.99, max(0.90, base_accuracy + time_variation))
+        
+        st.markdown('<div class="live-status">📊 XGBoost + TensorFlow + RF</div>', unsafe_allow_html=True)
+        st.metric("Ensemble Accuracy", f"{current_accuracy:.1%}", f"{time_variation:+.1%}")
+        st.metric("Recall Rate", "100.0%", "🎯 Perfect")
+        st.metric("Assets Monitored", "9,247", "+12 today")
+        
+        # Live infrastructure with realistic metrics
         st.markdown("### ☁️ AKS Infrastructure")
-        st.markdown('<div class="live-status">🚀 Pods Running: 12/12</div>', unsafe_allow_html=True)
-        st.markdown('<div class="live-status">📈 CPU: 23%</div>', unsafe_allow_html=True)
-        st.markdown('<div class="live-status">💾 Memory: 67%</div>', unsafe_allow_html=True)
         
-        # Airflow DAGs
+        pod_count = random.randint(10, 15)
+        cpu_usage = random.randint(18, 35)
+        memory_usage = random.randint(60, 75)
+        
+        st.markdown(f'<div class="live-status">🚀 Pods: {pod_count}/15 Running</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="live-status">📈 CPU: {cpu_usage}%</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="live-status">💾 Memory: {memory_usage}%</div>', unsafe_allow_html=True)
+        
+        # Live Airflow DAGs
         st.markdown("### 🔄 Airflow Orchestration")
-        st.markdown('<div class="live-status">✅ Daily Retrain DAG</div>', unsafe_allow_html=True)
-        st.markdown('<div class="live-status">✅ Data Pipeline DAG</div>', unsafe_allow_html=True)
-        st.markdown('<div class="live-status">✅ Alert Generation DAG</div>', unsafe_allow_html=True)
+        dag_statuses = ["✅ Success", "🔄 Running", "⏳ Queued"]
         
-        if st.button("🔄 Refresh Status"):
-            st.rerun()
+        st.markdown(f'<div class="live-status">{random.choice(dag_statuses)} Daily Retrain</div>', unsafe_allow_html=True)
+        st.markdown('<div class="live-status">✅ Data Pipeline</div>', unsafe_allow_html=True)
+        st.markdown('<div class="live-status">✅ Alert Generation</div>', unsafe_allow_html=True)
 
     # Main content tabs
     tab1, tab2, tab3, tab4 = st.tabs(["🚨 Live Dashboard", "🏗️ ML Architecture", "📈 Business Impact", "⚙️ Technical Deep Dive"])
@@ -370,852 +537,1061 @@ def main():
     with tab1:
         st.markdown("## 🚨 Real-Time Asset Monitoring Dashboard")
         
-        # Control panel
-        col1, col2, col3 = st.columns([2, 1, 1])
+        # Enhanced control panel
+        col1, col2, col3, col4 = st.columns([2, 1, 1, 1])
         
         with col1:
             st.markdown("### 📊 System Overview")
             
         with col2:
-            if st.button("🔍 Run Prediction Scan"):
-                with st.spinner("🤖 Running ML inference on all assets..."):
-                    time.sleep(2)
-                st.success("✅ Scan complete! 3 new high-risk assets identified.")
-                
+            scan_button = st.button("🔍 Run ML Scan", help="Execute prediction model on all assets")
+            
         with col3:
-            if st.button("📋 Generate Crew Schedule"):
-                with st.spinner("🔄 Optimizing crew assignments..."):
-                    time.sleep(1.5)
-                st.success("✅ Schedule optimized for next 7 days.")
+            schedule_button = st.button("📋 Optimize Crew", help="Generate optimized crew assignments")
+            
+        with col4:
+            simulate_button = st.button("⚡ Simulate Alert", help="Test alert generation system")
         
-        # Key metrics dashboard
-        st.markdown("### ⚡ Live Metrics")
+        # Process button interactions
+        if scan_button:
+            with st.spinner("🤖 Running ensemble models on 9,247 assets..."):
+                progress_bar = st.progress(0)
+                for i in range(100):
+                    time.sleep(0.02)
+                    progress_bar.progress(i + 1)
+            st.success("✅ Scan complete! 5 new high-risk assets identified.")
+            st.balloons()
+                
+        if schedule_button:
+            with st.spinner("🔄 Optimizing crew assignments with constraint solver..."):
+                time.sleep(2)
+            st.success("✅ Schedule optimized! 23% efficiency improvement projected.")
+            
+        if simulate_button:
+            st.error("🚨 CRITICAL ALERT: Transformer AST-7429 showing 96.3% failure probability!")
+            st.markdown('<div class="alert-banner">⚠️ Immediate Maintenance Required</div>', unsafe_allow_html=True)
+        
+        # Enhanced live metrics with animations
+        st.markdown("### ⚡ Live System Metrics")
         
         col1, col2, col3, col4 = st.columns(4)
         
+        # Generate real-time variations
+        high_risk_base = 146
+        high_risk_current = high_risk_base + random.randint(-5, 8)
+        
         with col1:
-            st.markdown('<div class="metric-card">🎯<br><strong>146</strong><br>High Risk Assets</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="metric-card">🎯<br><strong>{high_risk_current}</strong><br>High Risk Assets<br><small>↑ {random.randint(1,3)} from yesterday</small></div>', unsafe_allow_html=True)
             
         with col2:
-            st.markdown('<div class="metric-card">⚙️<br><strong>9,247</strong><br>Assets Monitored</div>', unsafe_allow_html=True)
+            st.markdown('<div class="metric-card">⚙️<br><strong>9,247</strong><br>Assets Monitored<br><small>Real-time IoT data</small></div>', unsafe_allow_html=True)
             
         with col3:
-            st.markdown('<div class="metric-card">👥<br><strong>23</strong><br>Crews Available</div>', unsafe_allow_html=True)
+            crew_available = random.randint(20, 25)
+            st.markdown(f'<div class="metric-card">👥<br><strong>{crew_available}</strong><br>Crews Available<br><small>Optimally scheduled</small></div>', unsafe_allow_html=True)
             
         with col4:
-            st.markdown('<div class="metric-card">💰<br><strong>$487K</strong><br>Failures Prevented</div>', unsafe_allow_html=True)
+            savings_today = random.randint(450, 520)
+            st.markdown(f'<div class="metric-card">💰<br><strong>${savings_today}K</strong><br>Failures Prevented<br><small>This month</small></div>', unsafe_allow_html=True)
         
-        # Risk distribution
-        st.markdown("### 🎯 Risk Distribution")
+        # Interactive risk distribution with real data
+        st.markdown("### 🎯 Interactive Asset Risk Analysis")
         
         col1, col2 = st.columns([2, 1])
         
         with col1:
-            # Generate and display top risky assets
-            assets = generate_asset_data()
-            high_risk_assets = [a for a in assets if a["Risk Level"] == "High"][:10]
+            # Asset filtering options
+            st.markdown("**🔍 Filter Assets:**")
+            filter_col1, filter_col2, filter_col3 = st.columns(3)
             
-            st.markdown("**🚨 Top Priority Assets for Maintenance:**")
+            with filter_col1:
+                risk_filter = st.selectbox("Risk Level", ["All", "High", "Medium", "Low"])
+            with filter_col2:
+                type_filter = st.selectbox("Asset Type", ["All", "Transformer", "Circuit Breaker", "Power Line", "Substation"])
+            with filter_col3:
+                location_filter = st.selectbox("Location", ["All", "North Grid", "South Grid", "East Grid", "West Grid"])
             
-            for asset in high_risk_assets:
-                risk_class = "risk-high" if asset["Risk Level"] == "High" else "risk-medium" if asset["Risk Level"] == "Medium" else "risk-low"
-                
-                st.markdown(f'''
-                <div class="asset-card {asset["Risk Color"]}">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <span class="risk-indicator {risk_class}"></span>
-                            <strong>{asset["Asset ID"]}</strong> - {asset["Type"]}
-                            <br><small>📍 {asset["Location"]} | Last Maintenance: {asset["Last Maintenance"]}</small>
-                        </div>
-                        <div style="text-align: right;">
-                            <div style="font-size: 1.2rem; font-weight: bold; color: #dc3545;">
-                                {asset["Failure Probability"]:.1%}
-                            </div>
-                            <div style="font-size: 0.9rem;">
-                                ${asset["Expected Cost"]:,}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                ''', unsafe_allow_html=True)
+            # Generate and filter asset data
+            all_assets = generate_detailed_asset_data()
+            
+            # Apply filters
+            filtered_assets = all_assets
+            if risk_filter != "All":
+                filtered_assets = [a for a in filtered_assets if a["Risk Level"] == risk_filter]
+            if type_filter != "All":
+                filtered_assets = [a for a in filtered_assets if type_filter in a["Type"]]
+            
+            # Display filtered assets with enhanced cards
+            st.markdown(f"**🚨 Showing {len(filtered_assets)} Assets (Click for details):**")
+            
+            for i, asset in enumerate(filtered_assets[:8]):  # Show top 8
+                with st.expander(f"🏗️ {asset['Asset ID']} - {asset['Type']} ({asset['Risk Level']} Risk)", expanded=False):
+                    asset_col1, asset_col2, asset_col3 = st.columns(3)
+                    
+                    with asset_col1:
+                        st.markdown(f"**📍 Location:** {asset['Location']}")
+                        st.markdown(f"**🏭 Manufacturer:** {asset['Manufacturer']}")
+                        st.markdown(f"**⚡ Voltage:** {asset['Voltage Level']}")
+                        
+                    with asset_col2:
+                        st.markdown(f"**📅 Installed:** {asset['Install Date']}")
+                        st.markdown(f"**🔧 Last Maintenance:** {asset['Last Maintenance']}")
+                        st.markdown(f"**👥 Customers Affected:** {asset['Customer Impact']:,}")
+                        
+                    with asset_col3:
+                        st.markdown(f"**⚠️ Failure Risk:** {asset['Failure Probability']:.1%}")
+                        st.markdown(f"**💰 Failure Cost:** ${asset['Expected Cost']:,}")
+                        st.markdown(f"**🎯 Confidence:** {asset['Confidence Score']:.1%}")
+                        
+                    # Add action buttons
+                    action_col1, action_col2, action_col3 = st.columns(3)
+                    with action_col1:
+                        if st.button(f"📋 Schedule Maintenance", key=f"maint_{i}"):
+                            st.success(f"✅ Maintenance scheduled for {asset['Asset ID']}")
+                    with action_col2:
+                        if st.button(f"📊 View History", key=f"hist_{i}"):
+                            st.info(f"📈 Displaying maintenance history for {asset['Asset ID']}")
+                    with action_col3:
+                        if st.button(f"🚨 Create Alert", key=f"alert_{i}"):
+                            st.warning(f"⚠️ Alert created for {asset['Asset ID']}")
         
         with col2:
-            st.markdown("**📈 Risk Breakdown**")
+            st.markdown("**📈 Risk Analytics**")
             
-            total_assets = len(assets)
-            high_risk_count = len([a for a in assets if a["Risk Level"] == "High"])
-            medium_risk_count = len([a for a in assets if a["Risk Level"] == "Medium"])
-            low_risk_count = len([a for a in assets if a["Risk Level"] == "Low"])
+            # Create interactive charts
+            dates, high_risk_counts, accuracy_scores = generate_prediction_trends()
             
-            st.metric("🔴 High Risk", f"{high_risk_count}", f"{high_risk_count/total_assets:.1%} of total")
-            st.metric("🟡 Medium Risk", f"{medium_risk_count}", f"{medium_risk_count/total_assets:.1%} of total")
-            st.metric("🟢 Low Risk", f"{low_risk_count}", f"{low_risk_count/total_assets:.1%} of total")
+            # Risk trend chart
+            fig_risk = go.Figure()
+            fig_risk.add_trace(go.Scatter(
+                x=dates, 
+                y=high_risk_counts,
+                mode='lines+markers',
+                name='High Risk Assets',
+                line=dict(color='#ff6b35', width=3),
+                marker=dict(size=8)
+            ))
+            fig_risk.update_layout(
+                title="📈 High Risk Assets Trend (30 Days)",
+                xaxis_title="Date",
+                yaxis_title="Count",
+                height=300,
+                template="plotly_dark"
+            )
+            st.plotly_chart(fig_risk, use_container_width=True)
             
-            # Alert system
+            # Model accuracy chart
+            fig_acc = go.Figure()
+            fig_acc.add_trace(go.Scatter(
+                x=dates,
+                y=[acc * 100 for acc in accuracy_scores],
+                mode='lines+markers',
+                name='Model Accuracy',
+                line=dict(color='#28a745', width=3),
+                marker=dict(size=8),
+                fill='tonexty'
+            ))
+            fig_acc.update_layout(
+                title="🎯 Model Accuracy Trend",
+                xaxis_title="Date", 
+                yaxis_title="Accuracy (%)",
+                height=300,
+                template="plotly_dark"
+            )
+            st.plotly_chart(fig_acc, use_container_width=True)
+            
+            # Live alerts
             st.markdown("**🚨 Active Alerts**")
             st.markdown('<div class="alert-banner">⚠️ 3 Critical Failures Predicted</div>', unsafe_allow_html=True)
-            st.markdown('<div class="cost-savings">💰 $156K Failure Cost Avoided</div>', unsafe_allow_html=True)
+            st.markdown('<div class="cost-savings">💰 $187K Failure Cost Avoided Today</div>', unsafe_allow_html=True)
         
-        # Crew scheduling optimization
-        st.markdown("### 👥 Optimized Crew Scheduling")
+        # Enhanced crew scheduling with real-time optimization
+        st.markdown("### 👥 Real-Time Crew Optimization")
         
+        # Simulate crew data with more details
         crew_data = {
-            "Crew ID": ["Crew-A", "Crew-B", "Crew-C", "Crew-D", "Crew-E"],
-            "Current Assignment": ["Transformer T-4521", "Circuit Breaker CB-891", "Available", "Power Line PL-334", "Substation SS-12"],
-            "Next Priority Asset": ["AST-8847", "AST-9234", "AST-7721", "AST-6654", "AST-5443"],
-            "Estimated Completion": ["2 hours", "4 hours", "Ready", "6 hours", "3 hours"],
-            "Efficiency Score": ["94%", "87%", "91%", "89%", "96%"]
+            "Crew ID": ["Alpha-01", "Beta-02", "Gamma-03", "Delta-04", "Echo-05"],
+            "Current Status": ["🔧 Maintenance", "🚗 Traveling", "✅ Available", "🔧 Emergency", "🍽️ Break"],
+            "Current Assignment": ["AST-8847 Transformer", "Transit to Grid-North", "Ready for dispatch", "AST-9234 Circuit Breaker", "Lunch break"],
+            "Next Priority": ["AST-7721", "AST-6654", "AST-5443", "AST-8901", "AST-7334"],
+            "ETA Completion": ["45 min", "15 min", "Ready", "2.5 hours", "30 min"],
+            "Efficiency Score": ["96%", "89%", "94%", "91%", "88%"],
+            "Specialization": ["HV Transformer", "Distribution", "General", "Protection", "Substation"]
         }
         
         crew_df = pd.DataFrame(crew_data)
-        st.dataframe(crew_df, use_container_width=True)
         
-        # Real-time model predictions
-        st.markdown("### 🤖 Live ML Predictions")
+        # Add crew optimization controls
+        opt_col1, opt_col2, opt_col3 = st.columns(3)
         
-        if st.button("🎯 Show Latest Model Output"):
-            with st.spinner("🔄 Fetching latest model predictions..."):
-                time.sleep(1)
-            
-            st.code("""
-            📊 Latest Ensemble Model Predictions (Last Run: 14:23:47)
-            
-            🎯 XGBoost Model: 0.891 accuracy | 0.945 recall
-            🧠 TensorFlow NN: 0.887 accuracy | 1.000 recall  
-            📈 scikit-learn: 0.882 accuracy | 0.987 recall
-            
-            🔥 ENSEMBLE OUTPUT: 0.940 accuracy | 1.000 recall
-            
-            ⚠️  HIGH PRIORITY PREDICTIONS:
-            • AST-8847: 94.2% failure risk (Transformer)
-            • AST-9234: 91.7% failure risk (Circuit Breaker)  
-            • AST-7721: 89.3% failure risk (Power Line)
-            
-            💡 Feature Importance:
-            1. Vibration_Amplitude: 0.234
-            2. Temperature_Delta: 0.198  
-            3. Load_Factor: 0.167
-            4. Maintenance_Age: 0.143
-            """)
-    
-    with tab2:
-        st.markdown("## 🏗️ ML Architecture & Infrastructure")
+        with opt_col1:
+            if st.button("🎯 Optimize All Crews"):
+                with st.spinner("🔄 Running optimization algorithm..."):
+                    time.sleep(2)
+                st.success("✅ Optimal assignments calculated!")
+                
+        with opt_col2:
+            if st.button("📍 Update Locations"):
+                st.info("📡 GPS locations updated for all crews")
+                
+        with opt_col3:
+            if st.button("⚡ Emergency Dispatch"):
+                st.error("🚨 Emergency crew dispatched to Grid Sector C!")
         
-        # Architecture selector
-        st.markdown("### 🎯 Explore the ML Pipeline")
-        
-        selected_component = st.selectbox(
-            "🔍 Deep Dive into Architecture Components:",
-            ["Complete ML Pipeline", "Model Ensemble Strategy", "AKS Deployment", "Airflow Orchestration", "Feature Engineering", "Model Validation"],
-            help="Select a component to explore its technical implementation"
+        # Enhanced crew table with status indicators
+        st.dataframe(
+            crew_df,
+            use_container_width=True,
+            column_config={
+                "Crew ID": st.column_config.TextColumn("Crew ID", width="small"),
+                "Current Status": st.column_config.TextColumn("Status", width="medium"),
+                "Efficiency Score": st.column_config.ProgressColumn("Efficiency", min_value=0, max_value=100)
+            }
         )
         
-        if selected_component == "Complete ML Pipeline":
-            st.markdown("### 🌐 End-to-End ML Architecture")
+        # Real-time model predictions with terminal-style output
+        st.markdown("### 🤖 Live ML Model Predictions")
+        
+        if st.button("🎯 Execute Model Inference", help="Run ensemble prediction on current asset data"):
+            with st.spinner("⚡ Processing 9,247 assets through ML pipeline..."):
+                progress_bar = st.progress(0)
+                status_text = st.empty()
+                
+                stages = [
+                    "🔄 Loading sensor data...",
+                    "🧮 Feature engineering...", 
+                    "🤖 XGBoost inference...",
+                    "🧠 TensorFlow prediction...",
+                    "🌲 Random Forest ensemble...",
+                    "📊 Risk scoring...",
+                    "✅ Results ready!"
+                ]
+                
+                for i, stage in enumerate(stages):
+                    status_text.text(stage)
+                    time.sleep(0.5)
+                    progress_bar.progress((i + 1) * 100 // len(stages))
             
+            # Display terminal-style output
+            current_time = datetime.now().strftime("%H:%M:%S")
+            st.markdown(f"""
+            <div class="prediction-output">
+            📊 ML ENSEMBLE PREDICTION RESULTS | Runtime: {current_time}
+            ================================================================
+            
+            🎯 MODEL PERFORMANCE:
+            ├── XGBoost Accuracy:     91.2% | Recall: 97.8% | Latency: 23ms
+            ├── TensorFlow NN:        89.7% | Recall: 100%  | Latency: 31ms  
+            └── Random Forest:        88.9% | Recall: 94.2% | Latency: 18ms
+            
+            🔥 ENSEMBLE CONSENSUS:    94.1% | Recall: 100%  | Avg: 24ms
+            
+            ⚠️  HIGH PRIORITY PREDICTIONS (>85% failure risk):
+            ├── AST-8847: 94.7% | Transformer 138kV    | Cost: $187K
+            ├── AST-9234: 91.2% | Circuit Breaker 23kV | Cost: $45K
+            ├── AST-7721: 89.8% | Power Line 115kV     | Cost: $78K
+            ├── AST-6654: 87.3% | Substation Control   | Cost: $156K
+            └── AST-5443: 86.1% | Generator 4kV        | Cost: $92K
+            
+            💡 TOP FEATURE IMPORTANCE:
+            ├── vibration_rms_30d:        23.4%
+            ├── temperature_gradient:     19.8%
+            ├── load_factor_variance:     16.7%
+            ├── maintenance_age_days:     14.3%
+            ├── electrical_harmonics:     12.1%
+            └── environmental_stress:      8.9%
+            
+            🎯 BUSINESS IMPACT: $487K potential failure cost identified
+            📋 CREW ASSIGNMENTS: 8 high-priority tasks queued
+            </div>
+            """, unsafe_allow_html=True)
+    
+    with tab2:
+        st.markdown("## 🏗️ Interactive ML Architecture & Infrastructure")
+        
+        # Enhanced component selector with descriptions
+        st.markdown("### 🎯 Explore the ML Pipeline Components")
+        
+        architecture_options = {
+            "Complete ML Pipeline": "End-to-end workflow from data to predictions",
+            "Model Ensemble Strategy": "XGBoost + TensorFlow + Random Forest ensemble",
+            "AKS Deployment": "Kubernetes auto-scaling and container orchestration",
+            "Airflow Orchestration": "Automated training and deployment pipelines",
+            "Feature Engineering": "146 sensor features and domain expertise",
+            "Model Validation": "Rolling window validation and business metrics"
+        }
+        
+        selected_component = st.selectbox(
+            "🔍 Select Architecture Component:",
+            list(architecture_options.keys()),
+            help="Choose a component to explore its technical implementation"
+        )
+        
+        st.info(f"💡 **{selected_component}**: {architecture_options[selected_component]}")
+        
+        if selected_component == "Complete ML Pipeline":
+            st.markdown("### 🌐 Interactive End-to-End ML Architecture")
+            
+            # Enhanced pipeline with click interactions
             col1, col2, col3 = st.columns([1, 2, 1])
             
             with col2:
-                pipeline_steps = [
-                    ("📊 Data Ingestion", "9,247 IoT sensors + historical maintenance"),
-                    ("🔄 Feature Engineering", "Rolling windows + domain expertise"),
-                    ("🤖 Model Ensemble", "XGBoost + TensorFlow + scikit-learn"),
-                    ("☁️ AKS Inference", "Auto-scaling prediction service"),
-                    ("📈 Business Logic", "Cost optimization + crew capacity"),
-                    ("🚨 Alert Generation", "Risk scoring + maintenance prioritization"),
-                    ("👥 Crew Optimization", "Schedule optimization with constraints")
+                pipeline_components = [
+                    ("📊 Data Ingestion", "9,247 IoT sensors + maintenance history", "Real-time streaming data"),
+                    ("🔄 Feature Engineering", "146 engineered features", "Rolling windows + domain expertise"),
+                    ("🤖 Model Ensemble", "XGBoost + TensorFlow + RF", "Weighted voting with 94% accuracy"),
+                    ("☁️ AKS Inference", "Auto-scaling prediction service", "3-20 pods based on load"),
+                    ("💼 Business Logic", "Cost optimization + crew capacity", "Multi-objective optimization"),
+                    ("🚨 Alert Generation", "Risk scoring + prioritization", "87% precision, 100% recall"),
+                    ("👥 Crew Optimization", "Schedule with constraints", "34% efficiency improvement")
                 ]
                 
-                for title, subtitle in pipeline_steps:
-                    st.markdown(f'''
-                    <div class="pipeline-step">
-                        <strong>{title}</strong><br>
-                        <small style="opacity: 0.8;">{subtitle}</small>
-                    </div>
-                    ''', unsafe_allow_html=True)
-                    if title != pipeline_steps[-1][0]:
-                        st.markdown('<div class="flow-arrow">⬇️</div>', unsafe_allow_html=True)
+                for i, (title, subtitle, details) in enumerate(pipeline_components):
+                    with st.expander(f"{title} - {subtitle}", expanded=(i == 0)):
+                        st.markdown(f"**Technical Details:** {details}")
+                        
+                        if "Data Ingestion" in title:
+                            st.code("""
+# Real-time data pipeline
+from azure.eventhub import EventHubConsumerClient
+import pandas as pd
+
+def process_sensor_data(partition_context, event):
+    sensor_data = json.loads(event.body_as_str())
+    
+    # Parse IoT telemetry
+    features = {
+        'asset_id': sensor_data['asset_id'],
+        'timestamp': sensor_data['timestamp'],
+        'vibration_rms': sensor_data['vibration']['rms'],
+        'temperature_avg': sensor_data['thermal']['average'],
+        'voltage_thd': sensor_data['electrical']['thd'],
+        'load_factor': sensor_data['load']['factor']
+    }
+    
+    # Store in time-series database
+    store_features(features)
+                            """)
+                        
+                        elif "Model Ensemble" in title:
+                            # Interactive model comparison
+                            model_comparison = {
+                                "Model": ["XGBoost", "TensorFlow", "Random Forest", "Ensemble"],
+                                "Accuracy": [0.912, 0.897, 0.889, 0.941],
+                                "Recall": [0.978, 1.000, 0.942, 1.000],
+                                "Latency (ms)": [23, 31, 18, 24],
+                                "Weight": [0.4, 0.35, 0.25, "N/A"]
+                            }
+                            
+                            model_df = pd.DataFrame(model_comparison)
+                            st.dataframe(model_df, use_container_width=True)
+                            
+                            if st.button(f"🔬 Test Model {i}", key=f"test_model_{i}"):
+                                with st.spinner("🧪 Running model validation..."):
+                                    time.sleep(1)
+                                st.success("✅ Validation passed! Model ready for production.")
+                        
+                        elif "AKS" in title:
+                            # Live AKS metrics
+                            aks_metrics = {
+                                "Metric": ["CPU Usage", "Memory Usage", "Active Pods", "Request Rate"],
+                                "Current": ["24%", "67%", "12", "847/min"],
+                                "Target": ["70%", "80%", "3-20", "1000/min"],
+                                "Status": ["🟢 Normal", "🟡 Medium", "🟢 Optimal", "🟢 Good"]
+                            }
+                            
+                            aks_df = pd.DataFrame(aks_metrics)
+                            st.dataframe(aks_df, use_container_width=True)
+                            
+                            if st.button(f"📈 Scale Up Pods", key=f"scale_{i}"):
+                                st.success("⚡ Scaling from 12 to 18 pods...")
             
-            # Performance metrics
-            st.markdown("### ⚡ Pipeline Performance")
-            perf_cols = st.columns(4)
+            # Interactive performance metrics
+            st.markdown("### ⚡ Live Pipeline Performance")
             
-            performance_metrics = [
-                ("< 5min", "Model Inference"),
-                ("100%", "Recall Rate"),
-                ("94%", "Accuracy"),
-                ("Auto-scale", "AKS Pods")
-            ]
+            perf_col1, perf_col2, perf_col3, perf_col4 = st.columns(4)
             
-            for i, (value, label) in enumerate(performance_metrics):
-                with perf_cols[i]:
-                    st.markdown(f'<div class="model-performance">{value}<br><small>{label}</small></div>', unsafe_allow_html=True)
+            with perf_col1:
+                latency = random.randint(180, 220)
+                st.markdown(f'<div class="model-performance">{latency}ms<br>End-to-End<br>Latency</div>', unsafe_allow_html=True)
+                
+            with perf_col2:
+                throughput = random.randint(840, 880)
+                st.markdown(f'<div class="model-performance">{throughput}/min<br>Prediction<br>Throughput</div>', unsafe_allow_html=True)
+                
+            with perf_col3:
+                accuracy = random.uniform(93.8, 94.5)
+                st.markdown(f'<div class="model-performance">{accuracy:.1f}%<br>Model<br>Accuracy</div>', unsafe_allow_html=True)
+                
+            with perf_col4:
+                uptime = random.uniform(99.7, 99.9)
+                st.markdown(f'<div class="model-performance">{uptime:.1f}%<br>System<br>Uptime</div>', unsafe_allow_html=True)
         
         elif selected_component == "Model Ensemble Strategy":
-            st.markdown("### 🤖 Ensemble Model Architecture")
+            st.markdown("### 🤖 Interactive Ensemble Model Comparison")
             
-            col1, col2 = st.columns(2)
+            # Model selection interface
+            model_col1, model_col2 = st.columns(2)
             
-            with col1:
-                st.markdown("**🎯 Model Configuration:**")
-                st.code("""
-# Ensemble Model Setup
-models = {
-    'xgboost': {
-        'n_estimators': 500,
-        'max_depth': 8,
-        'learning_rate': 0.1,
-        'objective': 'binary:logistic'
-    },
-    'tensorflow': {
-        'layers': [256, 128, 64, 32],
-        'dropout': 0.3,
-        'activation': 'relu',
-        'optimizer': 'adam'
-    },
-    'sklearn_rf': {
-        'n_estimators': 300,
-        'max_depth': 15,
-        'min_samples_split': 5
-    }
-}
-
-# Ensemble Strategy: Weighted Voting
-weights = [0.4, 0.35, 0.25]  # XGB, TF, RF
-final_prediction = weighted_average(predictions)
-                """)
+            with model_col1:
+                st.markdown("**🎛️ Ensemble Configuration:**")
+                
+                xgb_weight = st.slider("XGBoost Weight", 0.0, 1.0, 0.4, 0.05)
+                tf_weight = st.slider("TensorFlow Weight", 0.0, 1.0, 0.35, 0.05)
+                rf_weight = st.slider("Random Forest Weight", 0.0, 1.0, 0.25, 0.05)
+                
+                total_weight = xgb_weight + tf_weight + rf_weight
+                if abs(total_weight - 1.0) > 0.01:
+                    st.warning(f"⚠️ Weights sum to {total_weight:.2f}, should equal 1.0")
+                else:
+                    st.success("✅ Weight configuration valid")
+                
+                if st.button("🧪 Test Ensemble Configuration"):
+                    with st.spinner("🔄 Training ensemble with new weights..."):
+                        time.sleep(2)
+                    
+                    # Simulate performance based on weights
+                    estimated_accuracy = (0.912 * xgb_weight + 0.897 * tf_weight + 0.889 * rf_weight)
+                    estimated_recall = (0.978 * xgb_weight + 1.000 * tf_weight + 0.942 * rf_weight)
+                    
+                    st.success(f"🎯 Estimated Performance:")
+                    st.write(f"• Accuracy: {estimated_accuracy:.1%}")
+                    st.write(f"• Recall: {estimated_recall:.1%}")
             
-            with col2:
+            with model_col2:
                 st.markdown("**📊 Individual Model Performance:**")
                 
-                model_performance = {
-                    "Model": ["XGBoost", "TensorFlow NN", "Random Forest", "**Ensemble**"],
-                    "Accuracy": ["89.1%", "88.7%", "88.2%", "**94.0%**"],
-                    "Recall": ["94.5%", "100.0%", "98.7%", "**100.0%**"],
-                    "Precision": ["84.2%", "83.1%", "85.6%", "**87.3%**"],
-                    "F1-Score": ["89.2%", "90.8%", "91.8%", "**93.2%**"]
-                }
+                # Interactive performance chart
+                models = ["XGBoost", "TensorFlow", "Random Forest"]
+                accuracy_scores = [91.2, 89.7, 88.9]
+                recall_scores = [97.8, 100.0, 94.2]
                 
-                model_df = pd.DataFrame(model_performance)
-                st.dataframe(model_df, use_container_width=True)
+                fig = go.Figure()
+                fig.add_trace(go.Scatter(
+                    x=models, 
+                    y=accuracy_scores,
+                    mode='markers+lines',
+                    name='Accuracy (%)',
+                    marker=dict(size=12, color='#ff6b35'),
+                    line=dict(width=3)
+                ))
+                fig.add_trace(go.Scatter(
+                    x=models,
+                    y=recall_scores, 
+                    mode='markers+lines',
+                    name='Recall (%)',
+                    marker=dict(size=12, color='#28a745'),
+                    line=dict(width=3)
+                ))
                 
-                st.success("🎯 **Key Insight**: Ensemble achieves 100% recall through complementary model strengths")
+                fig.update_layout(
+                    title="🏆 Model Performance Comparison",
+                    xaxis_title="Model",
+                    yaxis_title="Score (%)",
+                    height=400,
+                    template="plotly_white"
+                )
+                
+                st.plotly_chart(fig, use_container_width=True)
         
-        elif selected_component == "AKS Deployment":
-            st.markdown("### ☁️ Azure Kubernetes Service Architecture")
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.markdown("**🚀 Kubernetes Configuration:**")
-                st.code("""
-# ML Inference Deployment
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: predictive-maintenance
-spec:
-  replicas: 3
-  template:
-    spec:
-      containers:
-      - name: ml-api
-        image: acr.io/pred-maint:v2.1
-        resources:
-          requests:
-            cpu: 500m
-            memory: 1Gi
-          limits:
-            cpu: 2
-            memory: 4Gi
-        ports:
-        - containerPort: 8080
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: ml-service
-spec:
-  type: LoadBalancer
-  ports:
-  - port: 80
-    targetPort: 8080
-                """)
-            
-            with col2:
-                st.markdown("**📊 AKS Cluster Metrics:**")
-                
-                aks_metrics = {
-                    "Resource": ["Nodes", "Pods", "CPU Usage", "Memory Usage", "Storage", "Network"],
-                    "Current": ["4", "12", "23%", "67%", "2.1TB", "1.2GB/s"],
-                    "Capacity": ["6", "24", "100%", "100%", "5TB", "10GB/s"],
-                    "Status": ["✅ Healthy", "✅ Running", "🟢 Normal", "🟡 Medium", "🟢 Available", "🟢 Normal"]
-                }
-                
-                aks_df = pd.DataFrame(aks_metrics)
-                st.dataframe(aks_df, use_container_width=True)
-                
-                # Auto-scaling simulation
-                if st.button("🔄 Simulate Load Spike"):
-                    with st.spinner("📈 Triggering horizontal pod autoscaler..."):
-                        time.sleep(2)
-                    st.success("✅ Scaled from 3 to 8 pods in 45 seconds!")
-        
-        elif selected_component == "Airflow Orchestration":
-            st.markdown("### 🔄 Airflow DAG Architecture")
-            
-            st.markdown("**📋 Daily Model Retrain DAG:**")
-            st.code("""
-from airflow import DAG
-from airflow.operators.python import PythonOperator
-from datetime import datetime, timedelta
-
-default_args = {
-    'owner': 'ml-team',
-    'depends_on_past': False,
-    'start_date': datetime(2024, 1, 1),
-    'email_on_failure': True,
-    'email_on_retry': False,
-    'retries': 2,
-    'retry_delay': timedelta(minutes=5)
-}
-
-dag = DAG(
-    'predictive_maintenance_retrain',
-    default_args=default_args,
-    description='Daily model retraining pipeline',
-    schedule_interval='0 2 * * *',  # 2 AM daily
-    catchup=False
-)
-
-# DAG Tasks
-extract_data = PythonOperator(
-    task_id='extract_sensor_data',
-    python_callable=extract_iot_data,
-    dag=dag
-)
-
-feature_engineering = PythonOperator(
-    task_id='feature_engineering',
-    python_callable=create_features,
-    dag=dag
-)
-
-train_ensemble = PythonOperator(
-    task_id='train_models',
-    python_callable=train_ensemble_models,
-    dag=dag
-)
-
-validate_model = PythonOperator(
-    task_id='validate_performance',
-    python_callable=rolling_window_validation,
-    dag=dag
-)
-
-deploy_model = PythonOperator(
-    task_id='deploy_to_aks',
-    python_callable=deploy_to_kubernetes,
-    dag=dag
-)
-
-# Task Dependencies
-extract_data >> feature_engineering >> train_ensemble >> validate_model >> deploy_model
-            """)
-            
-            # DAG status simulation
-            st.markdown("**📊 Current DAG Status:**")
-            dag_status = {
-                "Task": ["extract_sensor_data", "feature_engineering", "train_models", "validate_performance", "deploy_to_aks"],
-                "Status": ["✅ Success", "✅ Success", "🔄 Running", "⏳ Queued", "⏳ Queued"],
-                "Duration": ["2m 34s", "8m 12s", "15m 23s", "-", "-"],
-                "Start Time": ["02:00:15", "02:02:49", "02:11:01", "-", "-"]
-            }
-            
-            dag_df = pd.DataFrame(dag_status)
-            st.dataframe(dag_df, use_container_width=True)
-        
-        # Technology stack overview
+        # Enhanced technology stack with interactive cards
         st.markdown("---")
-        st.markdown("### 🛠️ Technology Stack")
+        st.markdown("### 🛠️ Interactive Technology Stack")
         
+        tech_categories = {
+            "🤖 ML Frameworks": {
+                "technologies": ["XGBoost 1.7", "TensorFlow 2.8", "scikit-learn 1.1", "Pandas 1.5"],
+                "description": "Production ML libraries with GPU acceleration",
+                "color": "#ff6b35"
+            },
+            "☁️ Cloud Infrastructure": {
+                "technologies": ["Azure AKS", "Container Registry", "Azure Storage", "Virtual Networks"],
+                "description": "Scalable Kubernetes infrastructure",
+                "color": "#0078d4"
+            },
+            "🔄 MLOps Pipeline": {
+                "technologies": ["Apache Airflow 2.4", "Azure DevOps", "Helm Charts", "Terraform"],
+                "description": "Automated deployment and orchestration",
+                "color": "#6f42c1"
+            },
+            "📊 Monitoring & Observability": {
+                "technologies": ["Grafana", "Prometheus", "App Insights", "Log Analytics"],
+                "description": "Full-stack monitoring and alerting",
+                "color": "#28a745"
+            },
+            "🗄️ Data Platform": {
+                "technologies": ["Event Hubs", "Cosmos DB", "Data Factory", "Time Series Insights"],
+                "description": "Real-time data ingestion and storage",
+                "color": "#dc3545"
+            },
+            "🔧 DevOps & Security": {
+                "technologies": ["Azure DevOps", "Key Vault", "RBAC", "Container Security"],
+                "description": "Secure development and deployment",
+                "color": "#6c757d"
+            }
+        }
+        
+        # Create interactive grid
         st.markdown('<div class="tech-stack-grid">', unsafe_allow_html=True)
         
-        tech_components = [
-            ("🤖 ML Frameworks", "XGBoost 1.7\nTensorFlow 2.8\nscikit-learn 1.1"),
-            ("☁️ Infrastructure", "Azure AKS\nAzure Container Registry\nAzure Storage"),
-            ("🔄 Orchestration", "Apache Airflow 2.4\nKubernetes 1.24\nHelm Charts"),
-            ("📊 Monitoring", "Grafana\nPrometheus\nApplication Insights"),
-            ("🗄️ Data Pipeline", "Azure Data Factory\nEvent Hubs\nCosmos DB"),
-            ("🔧 DevOps", "Azure DevOps\nTerraform\nDocker")
-        ]
-        
-        for title, technologies in tech_components:
-            st.markdown(f'''
-            <div class="tech-card">
-                <h4>{title}</h4>
-                <div style="font-size: 0.9rem; line-height: 1.6; color: #666;">
-                    {technologies.replace(chr(10), "<br>")}
-                </div>
-            </div>
-            ''', unsafe_allow_html=True)
+        cols = st.columns(3)
+        for i, (category, details) in enumerate(tech_categories.items()):
+            with cols[i % 3]:
+                with st.expander(f"{category}", expanded=False):
+                    st.markdown(f"**Description:** {details['description']}")
+                    st.markdown("**Technologies:**")
+                    for tech in details['technologies']:
+                        st.markdown(f"• {tech}")
+                    
+                    if st.button(f"📋 View Config", key=f"config_{i}"):
+                        st.code(f"""
+# {category} Configuration
+version: "1.0"
+technologies: {details['technologies']}
+deployment: production
+auto_scaling: enabled
+monitoring: comprehensive
+                        """)
         
         st.markdown('</div>', unsafe_allow_html=True)
     
     with tab3:
-        st.markdown("## 📈 Business Impact & ROI Analysis")
+        st.markdown("## 📈 Interactive Business Impact & ROI Analysis")
         
-        # Enhanced business metrics
-        st.markdown("### 💰 Financial Impact")
+        # Enhanced financial impact with interactive elements
+        st.markdown("### 💰 Real-Time Financial Dashboard")
         
         col1, col2, col3, col4 = st.columns(4)
         
-        business_metrics = [
-            ("Potential Annual Savings", "$2.3M", "Failure prevention", "Total operational cost avoidance"),
-            ("Equipment Downtime Reduction", "78%", "Faster response", "Proactive vs reactive maintenance"),
-            ("Crew Efficiency Improvement", "34%", "Optimized scheduling", "Better resource allocation"),
-            ("Alert Fatigue Elimination", "89%", "Precise targeting", "High-confidence predictions only")
-        ]
-        
-        for i, (label, value, delta, help_text) in enumerate(business_metrics):
-            with [col1, col2, col3, col4][i]:
-                st.metric(label, value, delta, help=help_text)
-        
-        # Detailed cost breakdown
-        st.markdown("### 💡 Cost Savings Breakdown")
-        
-        cost_data = {
-            "Category": ["Equipment Replacement Avoidance", "Reduced Emergency Repairs", "Optimized Crew Scheduling", "Prevented Service Outages", "Lower Insurance Claims"],
-            "Annual Savings": ["$1,200,000", "$580,000", "$340,000", "$150,000", "$30,000"],
-            "Impact": ["Prevent catastrophic failures", "Proactive maintenance", "Efficient resource use", "Customer satisfaction", "Risk reduction"],
-            "Confidence": ["High", "High", "Medium", "Medium", "Low"]
-        }
-        
-        cost_df = pd.DataFrame(cost_data)
-        st.dataframe(cost_df, use_container_width=True)
-        
-        # ROI timeline
-        st.markdown("### 📊 ROI Timeline")
-        
-        roi_timeline = {
-            "Quarter": ["Q1 2024", "Q2 2024", "Q3 2024", "Q4 2024", "Q1 2025"],
-            "Implementation Cost": ["$450K", "$200K", "$100K", "$50K", "$25K"],
-            "Savings Realized": ["$180K", "$420K", "$650K", "$780K", "$920K"],
-            "Cumulative ROI": ["-60%", "-12%", "+47%", "+89%", "+134%"],
-            "Failures Prevented": ["12", "28", "41", "52", "63"]
-        }
-        
-        roi_df = pd.DataFrame(roi_timeline)
-        st.dataframe(roi_df, use_container_width=True)
-        
-        st.success("💡 **Break-even Point**: Q3 2024 | **12-Month ROI**: 134%")
-        
-        # Asset impact analysis
-        st.markdown("### ⚙️ Asset-Specific Impact")
-        
-        col1, col2 = st.columns(2)
+        # Generate dynamic metrics
+        annual_savings = random.randint(2200000, 2400000)
+        downtime_reduction = random.randint(75, 82)
+        crew_efficiency = random.randint(32, 37)
+        alert_precision = random.randint(86, 91)
         
         with col1:
-            st.markdown("**🎯 High-Impact Asset Types:**")
+            st.metric(
+                "Annual Savings", 
+                f"${annual_savings:,}", 
+                f"+${random.randint(15000, 25000):,} this month",
+                help="Total operational cost avoidance"
+            )
             
-            asset_impact = {
+        with col2:
+            st.metric(
+                "Downtime Reduction", 
+                f"{downtime_reduction}%", 
+                f"+{random.randint(1,3)}% vs baseline",
+                help="Reduction in equipment downtime"
+            )
+            
+        with col3:
+            st.metric(
+                "Crew Efficiency", 
+                f"+{crew_efficiency}%", 
+                f"+{random.randint(1,2)}% this quarter",
+                help="Improvement in crew productivity"
+            )
+            
+        with col4:
+            st.metric(
+                "Alert Precision", 
+                f"{alert_precision}%", 
+                f"+{random.randint(2,4)}% improvement",
+                help="Percentage of alerts leading to actual issues"
+            )
+        
+        # Interactive cost savings breakdown
+        st.markdown("### 💡 Interactive Cost Analysis")
+        
+        cost_categories = {
+            "Equipment Replacement Avoidance": 1200000,
+            "Emergency Repair Reduction": 580000, 
+            "Optimized Crew Scheduling": 340000,
+            "Service Outage Prevention": 150000,
+            "Insurance Premium Reduction": 30000
+        }
+        
+        # Create interactive pie chart
+        fig_pie = go.Figure(data=[go.Pie(
+            labels=list(cost_categories.keys()),
+            values=list(cost_categories.values()),
+            hole=0.4,
+            marker_colors=['#ff6b35', '#f7931e', '#28a745', '#17a2b8', '#6c757d']
+        )])
+        
+        fig_pie.update_traces(textposition='inside', textinfo='percent+label')
+        fig_pie.update_layout(
+            title="💰 Annual Cost Savings Breakdown ($2.3M Total)",
+            height=500,
+            showlegend=True
+        )
+        
+        col1, col2 = st.columns([2, 1])
+        
+        with col1:
+            st.plotly_chart(fig_pie, use_container_width=True)
+            
+        with col2:
+            st.markdown("**💡 Cost Driver Analysis:**")
+            
+            for category, amount in cost_categories.items():
+                percentage = (amount / sum(cost_categories.values())) * 100
+                st.markdown(f"**{category}**")
+                st.progress(percentage / 100)
+                st.caption(f"${amount:,} ({percentage:.1f}%)")
+                st.markdown("---")
+        
+        # Interactive ROI timeline with projections
+        st.markdown("### 📊 Interactive ROI Timeline & Projections")
+        
+        # ROI projection controls
+        proj_col1, proj_col2, proj_col3 = st.columns(3)
+        
+        with proj_col1:
+            implementation_cost = st.slider("Implementation Cost ($K)", 500, 1500, 825)
+            
+        with proj_col2:
+            monthly_savings = st.slider("Monthly Savings ($K)", 150, 250, 190)
+            
+        with proj_col3:
+            projection_months = st.slider("Projection Period (months)", 12, 36, 24)
+        
+        # Calculate dynamic ROI
+        months = list(range(1, projection_months + 1))
+        cumulative_savings = [month * monthly_savings * 1000 for month in months]
+        cumulative_costs = [implementation_cost * 1000] + [0] * (len(months) - 1)
+        net_benefit = [savings - sum(cumulative_costs[:i+1]) for i, savings in enumerate(cumulative_savings)]
+        roi_percentage = [(benefit / (implementation_cost * 1000)) * 100 if implementation_cost > 0 else 0 for benefit in net_benefit]
+        
+        # Create interactive ROI chart
+        fig_roi = go.Figure()
+        
+        fig_roi.add_trace(go.Scatter(
+            x=months, 
+            y=cumulative_savings,
+            mode='lines+markers',
+            name='Cumulative Savings',
+            line=dict(color='#28a745', width=3),
+            marker=dict(size=6)
+        ))
+        
+        fig_roi.add_trace(go.Scatter(
+            x=months,
+            y=net_benefit,
+            mode='lines+markers', 
+            name='Net Benefit',
+            line=dict(color='#ff6b35', width=3),
+            marker=dict(size=6)
+        ))
+        
+        fig_roi.add_hline(y=0, line_dash="dash", line_color="red", annotation_text="Break-even")
+        
+        fig_roi.update_layout(
+            title=f"📈 ROI Projection ({projection_months} Month Outlook)",
+            xaxis_title="Months After Implementation",
+            yaxis_title="USD ($)",
+            height=400,
+            template="plotly_white"
+        )
+        
+        st.plotly_chart(fig_roi, use_container_width=True)
+        
+        # Find break-even point
+        break_even_month = None
+        for i, benefit in enumerate(net_benefit):
+            if benefit > 0:
+                break_even_month = i + 1
+                break
+        
+        if break_even_month:
+            final_roi = roi_percentage[-1]
+            st.success(f"💡 **Break-even Point**: Month {break_even_month} | **{projection_months}-Month ROI**: {final_roi:.0f}%")
+        else:
+            st.warning("⚠️ Break-even not achieved in projection period")
+        
+        # Interactive asset impact analysis
+        st.markdown("### ⚙️ Asset-Specific Impact Analysis")
+        
+        impact_col1, impact_col2 = st.columns(2)
+        
+        with impact_col1:
+            st.markdown("**🎯 Failure Prevention by Asset Type:**")
+            
+            asset_impact_data = {
                 "Asset Type": ["Transformers", "Circuit Breakers", "Power Lines", "Substations", "Generators"],
-                "Failure Rate Reduction": ["67%", "52%", "43%", "71%", "58%"],
-                "Avg Cost per Failure": ["$125K", "$45K", "$35K", "$180K", "$95K"],
-                "Annual Failures Prevented": ["18", "31", "22", "8", "12"]
+                "Failure Rate Reduction": [67, 52, 43, 71, 58],
+                "Avg Cost per Failure": [125000, 45000, 35000, 180000, 95000],
+                "Annual Failures Prevented": [18, 31, 22, 8, 12]
             }
             
-            asset_df = pd.DataFrame(asset_impact)
-            st.dataframe(asset_df, use_container_width=True)
-        
-        with col2:
-            st.markdown("**📈 Performance Trends:**")
+            # Create interactive bar chart
+            fig_assets = go.Figure()
             
-            # Show key insights
-            insights = [
-                "🎯 **Alert Precision**: 87% of alerts lead to actual issues found",
-                "⚡ **Response Time**: 34% faster crew deployment to critical assets",
-                "💰 **Cost Accuracy**: Predicted failure costs within 12% of actual",
-                "📊 **Model Drift**: <3% monthly performance degradation",
-                "🔄 **Retrain Frequency**: Weekly retraining maintains 94%+ accuracy"
+            fig_assets.add_trace(go.Bar(
+                x=asset_impact_data["Asset Type"],
+                y=asset_impact_data["Failure Rate Reduction"],
+                name="Failure Rate Reduction (%)",
+                marker_color='#ff6b35',
+                text=asset_impact_data["Failure Rate Reduction"],
+                textposition='auto',
+            ))
+            
+            fig_assets.update_layout(
+                title="📉 Failure Rate Reduction by Asset Type",
+                xaxis_title="Asset Type",
+                yaxis_title="Reduction (%)",
+                height=400
+            )
+            
+            st.plotly_chart(fig_assets, use_container_width=True)
+            
+        with impact_col2:
+            st.markdown("**📈 Key Performance Indicators:**")
+            
+            kpi_data = [
+                {"metric": "Alert Precision", "value": 87, "target": 90, "trend": "↗️"},
+                {"metric": "Response Time Improvement", "value": 34, "target": 30, "trend": "✅"},
+                {"metric": "Cost Prediction Accuracy", "value": 88, "target": 85, "trend": "✅"},
+                {"metric": "Model Stability", "value": 97, "target": 95, "trend": "✅"},
+                {"metric": "Crew Utilization", "value": 92, "target": 90, "trend": "✅"}
             ]
             
-            for insight in insights:
-                st.markdown(insight)
-            
-            st.info("💡 **Key Success Factor**: Feature calibration with business cost framing eliminated alert fatigue")
+            for kpi in kpi_data:
+                col_a, col_b, col_c = st.columns([2, 1, 1])
+                with col_a:
+                    st.write(f"**{kpi['metric']}**")
+                with col_b:
+                    st.write(f"{kpi['value']}% {kpi['trend']}")
+                with col_c:
+                    progress = kpi['value'] / 100
+                    st.progress(progress)
         
-        # Customer impact
-        st.markdown("### 👥 Operational Impact")
+        # Operational impact comparison
+        st.markdown("### 👥 Operational Transformation")
         
-        operational_data = {
-            "Metric": ["Service Interruptions", "Emergency Callouts", "Crew Overtime Hours", "Customer Complaints", "Regulatory Incidents"],
-            "Before ML": ["147/year", "89/month", "1,240/month", "67/month", "3/year"],
-            "After ML": ["32/year", "23/month", "820/month", "18/month", "0/year"],
-            "Improvement": ["78% reduction", "74% reduction", "34% reduction", "73% reduction", "100% reduction"]
+        before_after_data = {
+            "Metric": ["Service Interruptions", "Emergency Callouts", "Crew Overtime", "Customer Complaints", "Safety Incidents"],
+            "Before ML (Annual)": [147, 89*12, 1240*12, 67*12, 12],
+            "After ML (Annual)": [32, 23*12, 820*12, 18*12, 2],
+            "Improvement": ["78%", "74%", "34%", "73%", "83%"]
         }
         
-        operational_df = pd.DataFrame(operational_data)
-        st.dataframe(operational_df, use_container_width=True)
+        operational_df = pd.DataFrame(before_after_data)
+        
+        # Add color coding for improvements
+        st.dataframe(
+            operational_df,
+            use_container_width=True,
+            column_config={
+                "Before ML (Annual)": st.column_config.NumberColumn("Before ML", format="%d"),
+                "After ML (Annual)": st.column_config.NumberColumn("After ML", format="%d"),
+                "Improvement": st.column_config.TextColumn("Improvement", width="small")
+            }
+        )
+        
+        st.info("💡 **Key Success Factor**: Feature calibration with business cost framing eliminated alert fatigue while maintaining 100% recall for critical failures")
     
     with tab4:
-        st.markdown("## ⚙️ Technical Deep Dive")
+        st.markdown("## ⚙️ Technical Deep Dive & Implementation")
         
-        # Eversource-specific applications
-        st.markdown("### 🏢 Eversource Grid Applications")
+        # Enhanced Eversource applications
+        st.markdown("### 🏢 Eversource Grid Modernization Applications")
         
-        eversource_use_cases = {
-            "🔌 Transmission Grid": "230kV+ transmission line monitoring and failure prediction for critical backbone infrastructure",
-            "🏭 Distribution Network": "4-35kV distribution equipment optimization for residential and commercial customers",
-            "⛈️ Storm Hardening": "Weather-resilient equipment identification and targeted reinforcement strategies",
-            "🌊 Coastal Resilience": "Salt corrosion and storm surge impact modeling for coastal Connecticut operations",
-            "🌿 Green Energy Integration": "Solar/wind integration equipment stress analysis and maintenance optimization",
-            "📋 Regulatory Compliance": "ISO-NE reliability standards and NERC CIP compliance through predictive maintenance"
-        }
+        eversource_tabs = st.tabs(["🔌 Transmission", "🏠 Distribution", "⛈️ Resilience", "🌿 Renewables"])
         
-        for category, description in eversource_use_cases.items():
-            st.markdown(f"**{category}**: {description}")
+        with eversource_tabs[0]:
+            st.markdown("**230kV+ Transmission Infrastructure**")
+            st.markdown("""
+            - **High-voltage asset monitoring**: Critical backbone infrastructure serving 1.2M+ customers
+            - **Bulk power system reliability**: ISO-NE compliance and grid stability requirements  
+            - **Transmission line health**: Weather impact assessment and aging infrastructure management
+            - **Substation automation**: SCADA integration and remote monitoring capabilities
+            """)
+            
+            if st.button("🔍 Analyze Transmission Assets"):
+                st.success("⚡ Found 23 transmission assets requiring priority maintenance")
+                
+        with eversource_tabs[1]:
+            st.markdown("**4-35kV Distribution Network**")
+            st.markdown("""
+            - **Distribution transformer monitoring**: Residential and commercial service optimization
+            - **Feeder automation**: Smart grid capabilities and self-healing networks
+            - **Underground cable health**: Urban infrastructure in Connecticut's dense areas
+            - **Load balancing**: Peak demand management and grid efficiency
+            """)
+            
+        with eversource_tabs[2]:
+            st.markdown("**Storm Hardening & Coastal Resilience**") 
+            st.markdown("""
+            - **Weather impact modeling**: Hurricane and Nor'easter preparation strategies
+            - **Salt corrosion analysis**: Coastal Connecticut asset degradation patterns
+            - **Flood resilience**: Climate change adaptation for critical infrastructure
+            - **Emergency restoration**: Optimized crew deployment during major events
+            """)
+            
+        with eversource_tabs[3]:
+            st.markdown("**Clean Energy Integration**")
+            st.markdown("""
+            - **Solar interconnection**: Distributed generation impact on grid stability
+            - **Wind integration**: Offshore wind preparation and grid modernization
+            - **Energy storage**: Battery system integration and grid balancing
+            - **Smart meters**: AMI data integration for predictive analytics
+            """)
         
         st.markdown("---")
         
-        # Feature engineering deep dive
-        col1, col2 = st.columns(2)
+        # Enhanced feature engineering with interactive exploration
+        st.markdown("### 🔬 Interactive Feature Engineering Laboratory")
         
-        with col1:
-            st.markdown("### 🔬 Feature Engineering Strategy")
+        feature_tabs = st.tabs(["📊 Sensor Features", "⚙️ Maintenance Features", "💼 Business Features", "🧪 Feature Testing"])
+        
+        with feature_tabs[0]:
+            st.markdown("**IoT Sensor Feature Categories (146 total features)**")
             
-            with st.expander("**Sensor Data Features**", expanded=False):
-                st.code("""
-# IoT Sensor Features (146 total)
-sensors = {
-    'vibration': ['amplitude', 'frequency', 'acceleration'],
-    'thermal': ['temperature', 'gradient', 'hot_spots'],
-    'electrical': ['voltage', 'current', 'power_factor'],
-    'environmental': ['humidity', 'precipitation', 'wind'],
-    'load': ['demand', 'peak_ratio', 'variability']
-}
-
-# Rolling window aggregations
-for sensor in sensors:
-    features[f'{sensor}_7d_mean'] = rolling_mean(sensor, 7)
-    features[f'{sensor}_30d_std'] = rolling_std(sensor, 30)
-    features[f'{sensor}_trend'] = linear_trend(sensor, 14)
-                """)
-            
-            with st.expander("**Maintenance History Features**", expanded=False):
-                st.code("""
-# Maintenance-derived features
-maintenance_features = {
-    'days_since_last_maintenance': days_since_event,
-    'maintenance_frequency': count_last_year,
-    'maintenance_type_severity': severity_score,
-    'repair_cost_trend': cost_regression,
-    'failure_history': failure_count_5year,
-    'seasonal_maintenance_pattern': seasonal_encoding
-}
-
-# Business context features
-business_features = {
-    'criticality_score': grid_importance_rating,
-    'replacement_cost': asset_value,
-    'outage_customer_impact': downstream_customers,
-    'crew_availability': resource_constraints
-}
-                """)
-        
-        with col2:
-            st.markdown("### 📊 Model Validation Strategy")
-            
-            st.markdown("**🎯 Rolling Window Validation:**")
-            st.code("""
-# Time-series cross-validation
-def rolling_window_validation(data, window_size=365):
-    results = []
-    
-    for i in range(len(data) - window_size):
-        # Training window
-        train_end = i + window_size
-        train_data = data[:train_end]
-        
-        # Test window (next 30 days)
-        test_data = data[train_end:train_end+30]
-        
-        # Train ensemble
-        model = train_ensemble(train_data)
-        
-        # Evaluate
-        predictions = model.predict(test_data)
-        metrics = calculate_metrics(test_data.y, predictions)
-        results.append(metrics)
-    
-    return aggregate_results(results)
-
-# Business-aware validation
-def business_cost_validation(predictions, actual):
-    # False positive cost: unnecessary maintenance
-    fp_cost = false_positives * avg_maintenance_cost
-    
-    # False negative cost: missed failures
-    fn_cost = false_negatives * avg_failure_cost
-    
-    # Total business impact
-    total_cost = fp_cost + fn_cost
-    cost_savings = baseline_cost - total_cost
-    
-    return cost_savings
-            """)
-            
-            st.markdown("**📈 Validation Results:**")
-            validation_results = {
-                "Metric": ["Precision", "Recall", "F1-Score", "Business Cost Accuracy", "Alert Precision"],
-                "Training": ["89.2%", "96.7%", "92.8%", "88.4%", "83.1%"],
-                "Validation": ["87.3%", "100.0%", "93.2%", "91.7%", "87.0%"],
-                "Production": ["87.1%", "100.0%", "93.1%", "89.2%", "87.3%"]
+            sensor_categories = {
+                "Vibration Analysis": ["RMS amplitude", "Peak frequency", "Harmonic content", "Bearing signatures"],
+                "Thermal Monitoring": ["Hot spot temperature", "Gradient analysis", "Thermal imaging", "Ambient correlation"],
+                "Electrical Parameters": ["Voltage THD", "Current unbalance", "Power factor", "Partial discharge"],
+                "Environmental Factors": ["Humidity impact", "Wind loading", "Temperature cycling", "UV exposure"],
+                "Load Characteristics": ["Demand patterns", "Peak ratios", "Load factor", "Cycling frequency"]
             }
             
-            validation_df = pd.DataFrame(validation_results)
-            st.dataframe(validation_df, use_container_width=True)
+            for category, features in sensor_categories.items():
+                with st.expander(f"🔍 {category}", expanded=False):
+                    for feature in features:
+                        st.write(f"• {feature}")
+                    
+                    if st.button(f"📈 Generate Sample Data", key=f"sensor_{category}"):
+                        # Generate sample feature data
+                        sample_data = pd.DataFrame({
+                            'timestamp': pd.date_range('2024-01-01', periods=100, freq='H'),
+                            'feature_value': np.random.normal(50, 10, 100),
+                            'threshold': [60] * 100
+                        })
+                        
+                        fig = go.Figure()
+                        fig.add_trace(go.Scatter(
+                            x=sample_data['timestamp'],
+                            y=sample_data['feature_value'],
+                            mode='lines',
+                            name=category,
+                            line=dict(color='#ff6b35')
+                        ))
+                        fig.add_hline(y=60, line_dash="dash", annotation_text="Alert Threshold")
+                        fig.update_layout(title=f"{category} - Sample Data", height=300)
+                        st.plotly_chart(fig, use_container_width=True)
         
-        # Crew optimization algorithm
-        st.markdown("### 👥 Crew Capacity Optimization")
+        with feature_tabs[1]:
+            st.markdown("**Maintenance History Feature Engineering**")
+            
+            st.code("""
+# Advanced maintenance feature engineering
+def create_maintenance_features(maintenance_history):
+    features = {}
+    
+    # Temporal patterns
+    features['days_since_last_maintenance'] = calculate_days_since(maintenance_history)
+    features['maintenance_frequency_12m'] = count_maintenance_events(maintenance_history, 365)
+    features['seasonal_maintenance_pattern'] = encode_seasonal_patterns(maintenance_history)
+    
+    # Cost and severity patterns
+    features['avg_maintenance_cost_trend'] = calculate_cost_trend(maintenance_history, window=6)
+    features['maintenance_type_severity'] = encode_severity_scores(maintenance_history)
+    features['escalating_issues_pattern'] = detect_escalation_patterns(maintenance_history)
+    
+    # Reliability metrics
+    features['mtbf_trend'] = calculate_mtbf_trend(maintenance_history)
+    features['failure_mode_consistency'] = analyze_failure_patterns(maintenance_history)
+    features['maintenance_effectiveness'] = score_maintenance_quality(maintenance_history)
+    
+    return features
+            """)
+            
+        with feature_tabs[2]:
+            st.markdown("**Business Context Integration**")
+            
+            business_features = {
+                "Asset Criticality": "Grid topology importance scoring",
+                "Customer Impact": "Downstream customer count and priority",
+                "Replacement Cost": "Current asset valuation and replacement timeline",
+                "Regulatory Impact": "NERC CIP compliance and reporting requirements",
+                "Crew Availability": "Resource constraints and skill matching",
+                "Economic Factors": "Load growth, rate structures, and ROI calculations"
+            }
+            
+            for feature, description in business_features.items():
+                st.markdown(f"**{feature}**: {description}")
         
-        st.code("""
-# Crew scheduling optimization
-def optimize_crew_schedule(high_risk_assets, crews, constraints):
-    '''
-    Multi-objective optimization:
-    1. Minimize total failure risk exposure
-    2. Balance crew workload
-    3. Respect skill/geographic constraints
-    4. Optimize travel time between assets
-    '''
-    
-    from scipy.optimize import linprog
-    import networkx as nx
-    
-    # Objective function: minimize risk * time_to_failure
-    c = [asset.failure_prob * asset.urgency_score for asset in high_risk_assets]
-    
-    # Constraints
-    A_eq = []  # Crew capacity constraints
-    b_eq = []  # Available crew hours
-    
-    for crew in crews:
-        constraint = [1 if asset.location in crew.coverage_area else 0 
-                     for asset in high_risk_assets]
-        A_eq.append(constraint)
-        b_eq.append(crew.available_hours)
-    
-    # Skill matching constraints
-    for asset in high_risk_assets:
-        if asset.requires_specialist:
-            specialist_constraint = [
-                1 if crew.has_specialist(asset.type) else 0 
-                for crew in crews
-            ]
-    
-    # Solve optimization
-    result = linprog(c, A_eq=A_eq, b_eq=b_eq, method='highs')
-    
-    return create_schedule(result.x, crews, high_risk_assets)
-
-# Example output
-schedule = {
-    'Crew-A': ['AST-8847 (2h)', 'AST-9234 (3h)', 'Travel (1h)'],
-    'Crew-B': ['AST-7721 (4h)', 'AST-6654 (2h)', 'Break (1h)'],
-    'efficiency_score': 94.2,
-    'total_risk_reduction': 87.3
-}
-        """)
+        with feature_tabs[3]:
+            st.markdown("**🧪 Interactive Feature Testing Laboratory**")
+            
+            test_col1, test_col2 = st.columns(2)
+            
+            with test_col1:
+                st.markdown("**Feature Importance Analysis**")
+                
+                if st.button("🔬 Run Feature Importance Test"):
+                    with st.spinner("🔄 Analyzing feature contributions..."):
+                        time.sleep(2)
+                    
+                    # Simulate feature importance results
+                    feature_importance = {
+                        "Feature": ["vibration_rms_30d", "temperature_gradient", "load_factor_variance", 
+                                  "maintenance_age", "electrical_harmonics", "environmental_stress"],
+                        "Importance": [23.4, 19.8, 16.7, 14.3, 12.1, 8.9],
+                        "P-value": [0.001, 0.002, 0.003, 0.005, 0.012, 0.023]
+                    }
+                    
+                    importance_df = pd.DataFrame(feature_importance)
+                    
+                    fig_importance = go.Figure(data=[
+                        go.Bar(x=importance_df["Importance"], 
+                              y=importance_df["Feature"],
+                              orientation='h',
+                              marker_color='#ff6b35')
+                    ])
+                    fig_importance.update_layout(
+                        title="🎯 Feature Importance Rankings",
+                        xaxis_title="Importance (%)",
+                        height=400
+                    )
+                    st.plotly_chart(fig_importance, use_container_width=True)
+            
+            with test_col2:
+                st.markdown("**Correlation Analysis**")
+                
+                if st.button("📊 Generate Correlation Matrix"):
+                    # Create sample correlation matrix
+                    np.random.seed(42)
+                    features = ['vibration', 'temperature', 'load', 'age', 'electrical']
+                    corr_matrix = np.random.rand(5, 5)
+                    corr_matrix = (corr_matrix + corr_matrix.T) / 2  # Make symmetric
+                    np.fill_diagonal(corr_matrix, 1)  # Diagonal should be 1
+                    
+                    fig_corr = go.Figure(data=go.Heatmap(
+                        z=corr_matrix,
+                        x=features,
+                        y=features,
+                        colorscale='RdYlBu',
+                        zmid=0
+                    ))
+                    fig_corr.update_layout(
+                        title="🔗 Feature Correlation Matrix",
+                        height=400
+                    )
+                    st.plotly_chart(fig_corr, use_container_width=True)
         
-        # Production deployment details
-        st.markdown("### 🚀 Production Infrastructure")
+        # Enhanced production infrastructure
+        st.markdown("### 🚀 Production Infrastructure & Deployment")
         
-        infra_tabs = st.tabs(["☁️ AKS Setup", "🔄 CI/CD Pipeline", "📊 Monitoring Stack"])
+        infra_tabs = st.tabs(["☁️ AKS Architecture", "🔄 CI/CD Pipeline", "📊 Monitoring Stack", "🔒 Security"])
         
         with infra_tabs[0]:
-            st.markdown("**Kubernetes Deployment Configuration:**")
-            st.code("""
-# Terraform AKS Configuration
-resource "azurerm_kubernetes_cluster" "aks" {
-  name                = "pred-maint-aks"
-  location            = "East US 2"
-  resource_group_name = "rg-predictive-maintenance"
-  dns_prefix          = "predmaint"
-  
-  default_node_pool {
-    name       = "default"
-    node_count = 3
-    vm_size    = "Standard_D4s_v3"
-    auto_scaling_enabled = true
-    min_count = 2
-    max_count = 10
-  }
-  
-  identity {
-    type = "SystemAssigned"
-  }
-}
-
-# HPA Configuration
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: ml-inference-hpa
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: ml-inference
-  minReplicas: 3
-  maxReplicas: 20
-  metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        type: Utilization
-        averageUtilization: 70
-            """)
+            st.markdown("**Interactive Kubernetes Architecture**")
+            
+            # AKS cluster visualization
+            cluster_col1, cluster_col2 = st.columns(2)
+            
+            with cluster_col1:
+                st.markdown("**🎛️ Cluster Configuration:**")
+                
+                node_count = st.slider("Node Count", 2, 10, 4)
+                cpu_limit = st.slider("CPU Limit per Pod", 1, 8, 2)
+                memory_limit = st.slider("Memory Limit (GB)", 2, 16, 4)
+                
+                estimated_cost = node_count * 150 + (cpu_limit * memory_limit * 10)
+                st.metric("Estimated Monthly Cost", f"${estimated_cost:,}")
+                
+                if st.button("⚙️ Apply Configuration"):
+                    st.success(f"✅ AKS cluster updated: {node_count} nodes, {cpu_limit}CPU/{memory_limit}GB per pod")
+            
+            with cluster_col2:
+                st.markdown("**📊 Live Cluster Metrics:**")
+                
+                # Simulate real-time cluster data
+                cluster_metrics = {
+                    "Metric": ["Node Utilization", "Pod Count", "CPU Usage", "Memory Usage", "Network I/O"],
+                    "Current": ["67%", "12/24", "24%", "67%", "1.2 GB/s"], 
+                    "Healthy Range": ["50-80%", "3-20", "20-70%", "50-80%", "< 5 GB/s"],
+                    "Status": ["🟢", "🟢", "🟢", "🟡", "🟢"]
+                }
+                
+                cluster_df = pd.DataFrame(cluster_metrics)
+                st.dataframe(cluster_df, use_container_width=True)
         
         with infra_tabs[1]:
-            st.markdown("**Azure DevOps CI/CD Pipeline:**")
-            st.code("""
-# azure-pipelines.yml
-trigger:
-  branches:
-    include:
-    - main
-    - develop
-  paths:
-    include:
-    - src/models/*
-    - src/api/*
-
-stages:
-- stage: Test
-  jobs:
-  - job: ModelValidation
-    steps:
-    - task: UsePythonVersion@0
-      inputs:
-        versionSpec: '3.9'
-    
-    - script: |
-        pip install -r requirements.txt
-        python -m pytest tests/test_models.py
-        python scripts/validate_model_performance.py
-      displayName: 'Model Testing'
-    
-    - task: PublishTestResults@2
-      inputs:
-        testResultsFiles: '**/test-results.xml'
-
-- stage: Build
-  condition: succeeded()
-  jobs:
-  - job: BuildImage
-    steps:
-    - task: Docker@2
-      inputs:
-        command: 'buildAndPush'
-        repository: 'predmaint/ml-api'
-        containerRegistry: 'acrConnection'
-        tags: '$(Build.BuildNumber)'
-
-- stage: Deploy
-  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
-  jobs:
-  - deployment: DeployToAKS
-    environment: 'production'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - task: KubernetesManifest@0
-            inputs:
-              action: 'deploy'
-              kubernetesServiceConnection: 'aksConnection'
-              manifests: 'k8s/*.yaml'
-            """)
+            st.markdown("**🔄 Automated CI/CD Pipeline Status**")
+            
+            # Pipeline stage visualization
+            pipeline_stages = [
+                {"stage": "Code Commit", "status": "✅", "duration": "< 1min", "last_run": "2 hours ago"},
+                {"stage": "Unit Tests", "status": "✅", "duration": "3min", "last_run": "2 hours ago"},
+                {"stage": "Model Validation", "status": "✅", "duration": "8min", "last_run": "2 hours ago"},
+                {"stage": "Container Build", "status": "✅", "duration": "5min", "last_run": "2 hours ago"},
+                {"stage": "Security Scan", "status": "✅", "duration": "2min", "last_run": "2 hours ago"},
+                {"stage": "AKS Deployment", "status": "🔄", "duration": "4min", "last_run": "Running"}
+            ]
+            
+            pipeline_df = pd.DataFrame(pipeline_stages)
+            st.dataframe(pipeline_df, use_container_width=True)
+            
+            if st.button("🚀 Trigger Manual Deployment"):
+                with st.spinner("📦 Building and deploying new version..."):
+                    time.sleep(3)
+                st.success("✅ Deployment successful! New model version live.")
         
         with infra_tabs[2]:
-            st.markdown("**Grafana Monitoring Dashboard:**")
-            st.code("""
-# Grafana Dashboard Configuration (JSON)
-{
-  "dashboard": {
-    "title": "Predictive Maintenance ML Pipeline",
-    "panels": [
-      {
-        "title": "Model Performance",
-        "type": "stat",
-        "targets": [
-          {
-            "expr": "model_accuracy{job='ml-api'}",
-            "legendFormat": "Accuracy"
-          },
-          {
-            "expr": "model_recall{job='ml-api'}",
-            "legendFormat": "Recall"
-          }
-        ]
-      },
-      {
-        "title": "Prediction Volume",
-        "type": "graph",
-        "targets": [
-          {
-            "expr": "rate(predictions_total[5m])",
-            "legendFormat": "Predictions/sec"
-          }
-        ]
-      },
-      {
-        "title": "High Risk Assets",
-        "type": "table",
-        "targets": [
-          {
-            "expr": "high_risk_assets_count",
-            "legendFormat": "Count"
-          }
-        ]
-      },
-      {
-        "title": "Business Impact",
-        "type": "stat",
-        "targets": [
-          {
-            "expr": "estimated_cost_savings",
-            "legendFormat": "Cost Savings ($)"
-          }
-        ]
-      }
-    ]
-  }
-}
-
-# Prometheus Alerts
-groups:
-- name: ml-pipeline
-  rules:
-  - alert: ModelAccuracyDrop
-    expr: model_accuracy < 0.90
-    for: 5m
-    annotations:
-      summary: "Model accuracy below 90%"
-      
-  - alert: HighRiskAssetsSpike
-    expr: high_risk_assets_count > 200
-    for: 2m
-    annotations:
-      summary: "Unusual spike in high-risk assets"
-            """)
+            st.markdown("**📊 Comprehensive Monitoring Dashboard**")
+            
+            monitoring_col1, monitoring_col2 = st.columns(2)
+            
+            with monitoring_col1:
+                st.markdown("**🎯 SLA Metrics:**")
+                
+                sla_metrics = {
+                    "SLA": ["Uptime", "Response Time", "Accuracy", "Throughput"],
+                    "Target": ["99.5%", "< 200ms", "> 90%", "> 500/min"],
+                    "Current": ["99.8%", "187ms", "94.1%", "847/min"],
+                    "Status": ["🟢 Exceeding", "🟢 Met", "🟢 Met", "🟢 Met"]
+                }
+                
+                sla_df = pd.DataFrame(sla_metrics)
+                st.dataframe(sla_df, use_container_width=True)
+            
+            with monitoring_col2:
+                st.markdown("**🚨 Active Alerts & Incidents:**")
+                
+                if st.button("🔔 Check Alert Status"):
+                    st.success("✅ No critical alerts")
+                    st.info("ℹ️ 2 informational alerts: High CPU on node-3, Slow query detected")
+                    st.warning("⚠️ 1 warning: Model drift detected, retraining recommended")
+        
+        with infra_tabs[3]:
+            st.markdown("**🔒 Security & Compliance**")
+            
+            security_checklist = [
+                "✅ API authentication with Azure AD",
+                "✅ Network segmentation and firewall rules", 
+                "✅ Container image vulnerability scanning",
+                "✅ Secrets management with Key Vault",
+                "✅ RBAC and least privilege access",
+                "✅ Data encryption at rest and in transit",
+                "✅ Audit logging and compliance monitoring",
+                "✅ Regular security assessments"
+            ]
+            
+            for item in security_checklist:
+                st.markdown(item)
+            
+            if st.button("🔍 Run Security Audit"):
+                with st.spinner("🔐 Performing comprehensive security scan..."):
+                    time.sleep(3)
+                st.success("🛡️ Security audit passed! No vulnerabilities detected.")
     
-    # Enhanced footer
+    # Enhanced footer with call to action
     st.markdown("---")
-    st.markdown("### 🎯 Ready to Transform Grid Operations")
+    st.markdown("### 🎯 Ready to Transform Grid Operations at Scale")
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
@@ -1228,10 +1604,27 @@ groups:
                 across Eversource's Connecticut and Massachusetts service territories.
             </p>
             <div style="background: linear-gradient(45deg, #ff6b35, #f7931e); color: white; padding: 1rem; border-radius: 10px; margin: 1rem 0;">
-                <strong>🎯 Key Achievement: 100% recall with 89% alert precision eliminated alert fatigue</strong>
+                <strong>🎯 Key Achievement: 100% recall with 87% precision eliminated alert fatigue</strong>
+            </div>
+            <div style="margin: 2rem 0;">
+                <div style="display: inline-block; margin: 0.5rem;">
+                    <div style="background: #28a745; color: white; padding: 0.5rem 1rem; border-radius: 20px;">
+                        💰 $2.3M Annual ROI
+                    </div>
+                </div>
+                <div style="display: inline-block; margin: 0.5rem;">
+                    <div style="background: #dc3545; color: white; padding: 0.5rem 1rem; border-radius: 20px;">
+                        ⚡ Production Ready
+                    </div>
+                </div>
+                <div style="display: inline-block; margin: 0.5rem;">
+                    <div style="background: #6f42c1; color: white; padding: 0.5rem 1rem; border-radius: 20px;">
+                        📈 Scalable Architecture
+                    </div>
+                </div>
             </div>
             <p style="font-size: 1rem; color: #666; margin-top: 1rem;">
-                Let's discuss how to implement this for Eversource's 9,000+ grid assets.
+                Let's discuss implementing this for Eversource's 9,000+ grid assets and transforming maintenance operations.
             </p>
         </div>
         """, unsafe_allow_html=True)
